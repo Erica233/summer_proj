@@ -7,6 +7,12 @@ const cheerio = require('cheerio');
 // }).listen(9000);
 
 const undergraduate_graduate = 'graduate';
+const year = '2021';
+const classdays = [1, 3];
+//calculate how many weeks between two dates
+function weeksBetween(d1, d2) {
+    return Math.round((d2 - d1) / (7 * 24 * 60 * 60 * 1000));
+}
 
 const https = require('https');
 let req = https.request({
@@ -29,21 +35,55 @@ let req = https.request({
             if($(el).find('td').text().toLowerCase().includes("semester") && $(el).find('td').text().toLowerCase().includes('begin')){
                 startDate = $(el).find('td').eq(0).text();
                 //console.log($(el).find('td').text());
+                startDate += (", " + year);
+                console.log("1.startDate string: ", startDate);
+                var date = new Date(startDate);
+                var day1 = date.getDay();
+                var date1 = date.getDate();
+                var month1 = date.getMonth();
+                console.log('day1:', day1, 'month1:', month1, 'date1: ', date1);
             }
             else if($(el).find('p').text().toLowerCase().includes("semester") && $(el).find('p').text().toLowerCase().includes('begin')){
                 //console.log($(el).text());
                 startDate = $(el).find('p').eq(0).text();
+                startDate += (", " + year);
+                console.log("1.startDate string: ", startDate);
+                var date = new Date(startDate);
+                var day1 = date.getDay();
+                var date1 = date.getDate();
+                var month1 = date.getMonth();
+                console.log('day1:', day1, 'month1:', month1, 'date1: ', date1);
             }
             if($(el).find('td').text().toLowerCase().includes(undergraduate_graduate) && $(el).find('td').text().toLowerCase().includes('classes end')){
                 if(undergraduate_graduate=='graduate'){
                     if($(el).find('td').text().includes('Graduate') || $(el).find('td').text().includes(' graduate')){
                         endDate = $(el).find('td').eq(0).text();
+                        endDate += (", " + year);
+                        console.log("1.endDate string: ", endDate);
+                        var date = new Date(endDate);
+                        var day1 = date.getDay();
+                        var date1 = date.getDate();
+                        var month1 = date.getMonth();
+                        console.log('day1:', day1, 'month1:', month1, 'date1: ', date1);
                     }
                 }
                 else{
                     endDate = $(el).find('td').eq(0).text();
+                    endDate += (", " + year);
+                    console.log("1.endDate string: ", endDate);
+                    var date = new Date(endDate);
+                    var day1 = date.getDay();
+                    var date1 = date.getDate();
+                    var month1 = date.getMonth();
+                    console.log('day1:', day1, 'month1:', month1, 'date1: ', date1);
                 }
+
             }
+            //find number of columns needed
+            var numWeeks = weeksBetween(new Date(startDate), new Date(endDate));
+            console.log("numWeeks of this semester: ", numWeeks);
+
+            //holidays
             if($(el).find('td').text().toLowerCase().includes("no classes held")){
                 if(holidays==''){
                     holidays += $(el).find('td').eq(0).text();
