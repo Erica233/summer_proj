@@ -79,9 +79,6 @@ let req = https.request({
                 }
 
             }
-            //find number of columns needed
-            var numWeeks = weeksBetween(new Date(startDate), new Date(endDate));
-            console.log("numWeeks of this semester: ", numWeeks);
 
             //holidays
             if($(el).find('td').text().toLowerCase().includes("no classes held")){
@@ -121,6 +118,9 @@ let req = https.request({
                 holidays += $(el).find('td').eq(0).text();
             }
         });
+        //find number of columns needed
+        var numWeeks = weeksBetween(new Date(startDate), new Date(endDate));
+        console.log("numWeeks of this semester: ", numWeeks);
         console.log('start date: ' + startDate);
         console.log('end date: ' + endDate);
         console.log('holiday: ' + holidays);
