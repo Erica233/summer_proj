@@ -8,10 +8,42 @@ const cheerio = require('cheerio');
 
 const undergraduate_graduate = 'graduate';
 const year = '2021';
-const classdays = [1, 3];
+const classdays = [2, 4];
 //calculate how many weeks between two dates
 function weeksBetween(d1, d2) {
     return Math.round((d2 - d1) / (7 * 24 * 60 * 60 * 1000));
+}
+
+//num to weekdays
+function numToWeekdays(num) {
+    return ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"] [num] || '';
+}
+
+//get dates
+function getDateBetween(start, end, classdays) {
+    var result = [];
+    var startTime = new Date(start);
+    var endTime = new Date(end);
+    var i = 0;
+    while (endTime - startTime >= 0) {
+        let weekday = startTime.getDay();
+        //console.log("continue: ", weekday);
+        //console.log("classdays: ", classdays[0], classdays[1]);
+        if (weekday == 1) {
+            i = i + 1;
+        }
+        if (weekday != classdays[0] && weekday != classdays[1]) {
+            //console.log("continue: ", weekday);
+            startTime.setDate(startTime.getDate() + 1);
+            continue;
+        }
+        let month = startTime.getMonth();
+        month = month<9?''+(month+1):month+1;
+        let day = startTime.getDate().toString().length == 1 ? "" + startTime.getDate() : startTime.getDate();
+        result.push([i, numToWeekdays(weekday) + " " + month + "/" + day, 1]);
+        startTime.setDate(startTime.getDate() + 1);
+    }
+    return result;
 }
 
 const https = require('https');
@@ -124,7 +156,10 @@ let req = https.request({
         console.log('start date: ' + startDate);
         console.log('end date: ' + endDate);
         console.log('holiday: ' + holidays);
+        results = getDateBetween(new Date(startDate), new Date(endDate), classdays);
+        console.log("num of columns: ", results.length);
         //console.log(tableStr.html());
+        console.log("results: ", results);
     });
     //console.log("successfully request info from the host!")
 });
