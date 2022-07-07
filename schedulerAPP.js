@@ -6,9 +6,11 @@ const cheerio = require('cheerio');
 //     response.end();
 // }).listen(9000);
 
-const undergraduate_graduate = 'graduate';
+
 const year = '2021';
-const classdays = [2, 4];
+const semester = 'spring';
+const undergraduate_graduate = 'undergraduate';
+const classdays = [1, 3];
 //calculate how many weeks between two dates
 function weeksBetween(d1, d2) {
     return Math.round((d2 - d1) / (7 * 24 * 60 * 60 * 1000));
@@ -24,24 +26,24 @@ function getDateBetween(start, end, classdays) {
     var result = [];
     var startTime = new Date(start);
     var endTime = new Date(end);
-    var i = 0;
+    var i = 1;
     while (endTime - startTime >= 0) {
-        let weekday = startTime.getDay();
-        //console.log("continue: ", weekday);
-        //console.log("classdays: ", classdays[0], classdays[1]);
-        if (weekday == 1) {
-            i = i + 1;
-        }
-        if (weekday != classdays[0] && weekday != classdays[1]) {
-            //console.log("continue: ", weekday);
+        //*****maybe there is only one day having class in each week or three days instead of two days
+        if (startTime.getDay() != classdays[0] && startTime.getDay() != classdays[1]) {
             startTime.setDate(startTime.getDate() + 1);
+            if (startTime.getDay() == 1) {
+                i = i + 1;
+            }
             continue;
         }
         let month = startTime.getMonth();
         month = month<9?''+(month+1):month+1;
         let day = startTime.getDate().toString().length == 1 ? "" + startTime.getDate() : startTime.getDate();
-        result.push([i, numToWeekdays(weekday) + " " + month + "/" + day, 1]);
+        result.push([i, numToWeekdays(startTime.getDay()) + " " + month + "/" + day, 1]);
         startTime.setDate(startTime.getDate() + 1);
+        if (startTime.getDay() == 1) {
+            i = i + 1;
+        }
     }
     return result;
 }
@@ -49,7 +51,7 @@ function getDateBetween(start, end, classdays) {
 const https = require('https');
 let req = https.request({
     'hostname': 'registrar.duke.edu',
-    'path':'/fall-2021-academic-calendar/' //2021 fall; 2023 fall
+    'path':'/'+semester+'-'+year+'-academic-calendar/' //2021 fall; 2023 fall
 }, res=>{
     var htmlstr = '';
     res.on('data', buffer=>{
@@ -68,46 +70,46 @@ let req = https.request({
                 startDate = $(el).find('td').eq(0).text();
                 //console.log($(el).find('td').text());
                 startDate += (", " + year);
-                console.log("1.startDate string: ", startDate);
+                //console.log("1.startDate string: ", startDate);
                 var date = new Date(startDate);
                 var day1 = date.getDay();
                 var date1 = date.getDate();
                 var month1 = date.getMonth();
-                console.log('day1:', day1, 'month1:', month1, 'date1: ', date1);
+                //console.log('day1:', day1, 'month1:', month1, 'date1: ', date1);
             }
             else if($(el).find('p').text().toLowerCase().includes("semester") && $(el).find('p').text().toLowerCase().includes('begin')){
                 //console.log($(el).text());
                 startDate = $(el).find('p').eq(0).text();
                 startDate += (", " + year);
-                console.log("1.startDate string: ", startDate);
+                //console.log("1.startDate string: ", startDate);
                 var date = new Date(startDate);
                 var day1 = date.getDay();
                 var date1 = date.getDate();
                 var month1 = date.getMonth();
-                console.log('day1:', day1, 'month1:', month1, 'date1: ', date1);
+                //console.log('day1:', day1, 'month1:', month1, 'date1: ', date1);
             }
             if($(el).find('td').text().toLowerCase().includes(undergraduate_graduate) && $(el).find('td').text().toLowerCase().includes('classes end')){
                 if(undergraduate_graduate=='graduate'){
                     if($(el).find('td').text().includes('Graduate') || $(el).find('td').text().includes(' graduate')){
                         endDate = $(el).find('td').eq(0).text();
                         endDate += (", " + year);
-                        console.log("1.endDate string: ", endDate);
+                        //console.log("1.endDate string: ", endDate);
                         var date = new Date(endDate);
                         var day1 = date.getDay();
                         var date1 = date.getDate();
                         var month1 = date.getMonth();
-                        console.log('day1:', day1, 'month1:', month1, 'date1: ', date1);
+                        //console.log('day1:', day1, 'month1:', month1, 'date1: ', date1);
                     }
                 }
                 else{
                     endDate = $(el).find('td').eq(0).text();
                     endDate += (", " + year);
-                    console.log("1.endDate string: ", endDate);
+                    //console.log("1.endDate string: ", endDate);
                     var date = new Date(endDate);
                     var day1 = date.getDay();
                     var date1 = date.getDate();
                     var month1 = date.getMonth();
-                    console.log('day1:', day1, 'month1:', month1, 'date1: ', date1);
+                    //console.log('day1:', day1, 'month1:', month1, 'date1: ', date1);
                 }
 
             }
@@ -151,26 +153,83 @@ let req = https.request({
             }
         });
         //find number of columns needed
-        var numWeeks = weeksBetween(new Date(startDate), new Date(endDate));
-        console.log("numWeeks of this semester: ", numWeeks);
         console.log('start date: ' + startDate);
         console.log('end date: ' + endDate);
         console.log('holiday: ' + holidays);
         results = getDateBetween(new Date(startDate), new Date(endDate), classdays);
-        console.log("num of columns: ", results.length);
+        // var numWeeks = weeksBetween(new Date(startDate), new Date(endDate));
+        // console.log("num of weeks: ", numWeeks);
+        //console.log("num of columns: ", results.length);
         //console.log(tableStr.html());
+        //console.log("results: ", results);
+        //holiday
+        var splitArr = [];
+        var holidaysArr = [];
+        splitArr = holidays.split(";");
+        for(let i=0; i<splitArr.length; i++){
+            var numSplitArr = splitArr[i].split("-");
+            var numSplit = numSplitArr.length;
+            if(numSplit==2 || numSplit==3){
+                date_begin = '';
+                date_end = '';
+                if(numSplit==2){
+                    var startEndArr = splitArr[i].split("-");
+                    var holidayStart = startEndArr[0] + year;
+                    var holidayEnd = startEndArr[1] + ' ' +  year;
+                    date_begin = new Date(holidayStart);
+                    date_end = new Date(holidayEnd);
+                }
+                else{
+                    var spltDate = splitArr[i].split(",");
+                    var splitMon = spltDate[1].split("-");
+                    var star = splitMon[0] + year;
+                    var splitDay = splitMon[0].split(" ");
+                    var en = splitDay[1] + splitMon[1] + ' ' + year;
+                    date_begin = new Date(star);
+                    date_end = new Date(en);
+                }
+                // console.log(date_begin);
+                // console.log(date_end);
+                for(let i = date_begin.getTime(); i<=date_end.getTime();){
+                    let push_date = new Date(parseInt(i));
+                    for(let j = 0; j<classdays.length; j++){
+                        if(push_date.getDay()==classdays[j]){
+                            holidaysArr.push(push_date);
+                            break;
+                        }
+                    }
+                    i = i+24 * 60 * 60 * 1000;
+                }
+            }
+            else{
+                var str = splitArr[i]+year;
+                let str_date = new Date(str);
+                for(let j = 0; j<classdays.length; j++){
+                    if(str_date.getDay()==classdays[j]){
+                        holidaysArr.push(str_date);
+                        break;
+                    }
+                }
+            }
+        }
+        for(let i=0; i<holidaysArr.length; i++){
+            let month = holidaysArr[i].getMonth()+1;
+            let day = holidaysArr[i].getDate();
+            holidaysArr[i] = month + "/" + day;
+        }
+        //console.log(holidaysArr);
+        for(let i=0; i<results.length; i++){
+            let arr = results[i][1].split(" ");
+            for(let j=0; j<holidaysArr.length; j++){
+                //console.log(res_date);
+                if(arr[1] == holidaysArr[j]){
+                    results[i][2] = 0;
+                    break;
+                }
+            }
+        }
         console.log("results: ", results);
     });
-    //console.log("successfully request info from the host!")
 });
 
 req.end();
-
-// const {Builder, By, Key, until} = require('selenium-webdriver');
-
-// (async function start(){
-//     let driver = await new Builder().forBrowser('chrome').build();
-//     await driver.get('https://registrar.duke.edu/spring-2021-academic-calendar');
-//     await driver.findElement(By.css('#changeCityBox ul.clearfix > li:nth-of-type(8)'))
-// })
-
