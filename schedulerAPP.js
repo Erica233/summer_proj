@@ -8,9 +8,9 @@ const cheerio = require('cheerio');
 
 
 const year = '2021';
-const semester = 'spring';
-const undergraduate_graduate = 'undergraduate';
-const classdays = [1, 3];
+const semester = 'fall';
+const undergraduate_graduate = 'graduate';
+const classdays = [2, 4];
 //calculate how many weeks between two dates
 function weeksBetween(d1, d2) {
     return Math.round((d2 - d1) / (7 * 24 * 60 * 60 * 1000));
@@ -28,13 +28,24 @@ function getDateBetween(start, end, classdays) {
     var endTime = new Date(end);
     var i = 1;
     while (endTime - startTime >= 0) {
-        //*****maybe there is only one day having class in each week or three days instead of two days
-        if (startTime.getDay() != classdays[0] && startTime.getDay() != classdays[1]) {
-            startTime.setDate(startTime.getDate() + 1);
-            if (startTime.getDay() == 1) {
-                i = i + 1;
+        //there is only one day having class in each week or three days instead of two days
+        if(classdays.length==1){
+            if (startTime.getDay() != classdays[0]) {
+                startTime.setDate(startTime.getDate() + 1);
+                if (startTime.getDay() == 1) {
+                    i = i + 1;
+                }
+                continue;
             }
-            continue;
+        }
+        else if (classdays.length==2){
+            if (startTime.getDay() != classdays[0] && startTime.getDay() != classdays[1]) {
+                startTime.setDate(startTime.getDate() + 1);
+                if (startTime.getDay() == 1) {
+                    i = i + 1;
+                }
+                continue;
+            }
         }
         let month = startTime.getMonth();
         month = month<9?''+(month+1):month+1;
@@ -223,8 +234,10 @@ let req = https.request({
             for(let j=0; j<holidaysArr.length; j++){
                 //console.log(res_date);
                 if(arr[1] == holidaysArr[j]){
-                    results[i][2] = 0;
+                    results[i][2] = "No class";
                     break;
+                } else {
+                    results[i][2] = "";
                 }
             }
         }
