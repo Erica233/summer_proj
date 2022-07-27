@@ -7,10 +7,12 @@ const cheerio = require('cheerio');
 // }).listen(9000);
 
 
-const year = '2021';
-const semester = 'fall';
+const year = '2022';
+const semester = 'summer';
+//const semester = 'fall';
+const term = 'term 1';
 const undergraduate_graduate = 'graduate';
-const classdays = [2, 4];
+const classdays = [1, 4];
 //calculate how many weeks between two dates
 function weeksBetween(d1, d2) {
     return Math.round((d2 - d1) / (7 * 24 * 60 * 60 * 1000));
@@ -76,6 +78,39 @@ let req = https.request({
         const $ = cheerio.load(htmlstr);
         //const tableStr = $( '.node__content tbody');
         const tableStr = $( '.node__content tbody tr').each((index, el)=>{
+            //summer
+            if($(el).find('td').text().toLowerCase().includes(term) && $(el).find('td').text().toLowerCase().includes("classes begin")){
+                startDate = $(el).find('td').eq(0).text();
+                //console.log($(el).find('td').text());
+                startDate += (", " + year);
+                //console.log("1.startDate string: ", startDate);
+                var date = new Date(startDate);
+                var day1 = date.getDay();
+                var date1 = date.getDate();
+                var month1 = date.getMonth();
+                //console.log('day1:', day1, 'month1:', month1, 'date1: ', date1);
+            }
+            else if($(el).find('td').text().toLowerCase().includes(term) && $(el).find('td').text().toLowerCase().includes("classes begin")){
+                //console.log($(el).text());
+                startDate = $(el).find('p').eq(0).text();
+                startDate += (", " + year);
+                //console.log("1.startDate string: ", startDate);
+                var date = new Date(startDate);
+                var day1 = date.getDay();
+                var date1 = date.getDate();
+                var month1 = date.getMonth();
+                //console.log('day1:', day1, 'month1:', month1, 'date1: ', date1);
+            }
+            if($(el).find('td').text().toLowerCase().includes(term) && $(el).find('td').text().toLowerCase().includes("classes end")){
+                endDate = $(el).find('td').eq(0).text();
+                endDate += (", " + year);
+                //console.log("1.endDate string: ", endDate);
+                var date = new Date(endDate);
+                var day1 = date.getDay();
+                var date1 = date.getDate();
+                var month1 = date.getMonth();
+                //console.log('day1:', day1, 'month1:', month1, 'date1: ', date1);
+            }
             //console.log($(el).find('td').text());
             if($(el).find('td').text().toLowerCase().includes("semester") && $(el).find('td').text().toLowerCase().includes('begin')){
                 startDate = $(el).find('td').eq(0).text();
@@ -122,10 +157,17 @@ let req = https.request({
                     var month1 = date.getMonth();
                     //console.log('day1:', day1, 'month1:', month1, 'date1: ', date1);
                 }
-
             }
 
             //holidays
+            if($(el).find('td').text().toLowerCase().includes("no classes are held")){
+                if(holidays==''){
+                    holidays += $(el).find('td').eq(0).text();
+                }
+                else{
+                    holidays += '; ' + $(el).find('td').eq(0).text();
+                }
+            }
             if($(el).find('td').text().toLowerCase().includes("no classes held")){
                 if(holidays==''){
                     holidays += $(el).find('td').eq(0).text();
@@ -177,9 +219,12 @@ let req = https.request({
         var splitArr = [];
         var holidaysArr = [];
         splitArr = holidays.split(";");
+        //console.log("splitArr: ", splitArr);
         for(let i=0; i<splitArr.length; i++){
             var numSplitArr = splitArr[i].split("-");
             var numSplit = numSplitArr.length;
+            //console.log("numSplitArr: ", numSplitArr);
+            //console.log("numSplit: ", numSplit);
             if(numSplit==2 || numSplit==3){
                 date_begin = '';
                 date_end = '';
@@ -199,8 +244,8 @@ let req = https.request({
                     date_begin = new Date(star);
                     date_end = new Date(en);
                 }
-                // console.log(date_begin);
-                // console.log(date_end);
+                //console.log(date_begin);
+                //console.log(date_end);
                 for(let i = date_begin.getTime(); i<=date_end.getTime();){
                     let push_date = new Date(parseInt(i));
                     for(let j = 0; j<classdays.length; j++){
@@ -213,8 +258,10 @@ let req = https.request({
                 }
             }
             else{
-                var str = splitArr[i]+year;
+                var str = splitArr[i]+' '+year;
+                //console.log("str: ", str);
                 let str_date = new Date(str);
+                //console.log("str_date: ", str_date);
                 for(let j = 0; j<classdays.length; j++){
                     if(str_date.getDay()==classdays[j]){
                         holidaysArr.push(str_date);
@@ -228,15 +275,22 @@ let req = https.request({
             let day = holidaysArr[i].getDate();
             holidaysArr[i] = month + "/" + day;
         }
-        //console.log(holidaysArr);
+        //console.log("holidaysArr: ", holidaysArr);
         for(let i=0; i<results.length; i++){
             let arr = results[i][1].split(" ");
+            //console.log("arr: ", arr);
+            //console.log("holidaysArr: ", holidaysArr);
+            if (holidaysArr.length == 0) {
+                results[i][2] = "";
+            }
             for(let j=0; j<holidaysArr.length; j++){
                 //console.log(res_date);
                 if(arr[1] == holidaysArr[j]){
+                    //console.log("no class");
                     results[i][2] = "No class";
                     break;
                 } else {
+                    //console.log("class");
                     results[i][2] = "";
                 }
             }
